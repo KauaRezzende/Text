@@ -1,0 +1,269 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use App\Models\Produto;
+
+class Movimento extends Model
+{
+    protected $fillable = [
+        'produto_id',
+        'quantidade',
+        'tipo',
+    ];
+
+    public function Produto(){
+        return $this->belongsTo(Produto::class, 'produto_id');
+    }
+
+}
+
+
+
+
+
+
+
+
+
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use App\Models\Movimento;
+
+
+class Produto extends Model
+{
+    protected $fillable = [
+        'nome',
+        'marca',
+        'estoque',
+    ];
+
+    public function movimento(){
+        return $this->hasMany(Movimento::class);
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('produtos', function (Blueprint $table) {
+            $table->id();
+            $table->string('nome');
+            $table->string('marca');
+            $table->integer('estoque');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('produtos');
+    }
+};
+
+
+
+
+
+
+
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('movimentos', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('produto_id');
+            $table->integer('quantidade');
+            $table->enum('tipo',['e','s']);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('movimentos');
+    }
+};
+
+
+
+
+
+
+
+
+
+
+
+<?php
+
+namespace App\Filament\Resources\Movimentos\Pages;
+
+use App\Filament\Resources\Movimentos\MovimentoResource;
+use Filament\Resources\Pages\CreateRecord;
+use App\Models\Produto;
+use Filament\Notifications\Notification;
+
+
+class CreateMovimento extends CreateRecord
+{
+    protected static string $resource = MovimentoResource::class;
+
+    protected function beforeCreate(): void
+    {
+        $data = $this -> data;
+        $produto = Produto :: find ($data['produto_id']);
+        $quantidadeMovimento = (int) $data ['quantidade'];
+
+
+
+        if ($data ['tipo']=== 's' && $produto -> estoque < $quantidadeMovimento) {
+            Notification::make()
+            ->warning()
+            ->title('Aviso')
+            ->body('Sem estoque')
+            ->persistent()
+
+            ->send();
+
+        $this->halt();
+        }
+    }
+
+    protected function afterCreate(): void
+    {
+        $movimento = $this -> getRecord();
+        $produto = $movimento -> produto;
+
+        if($movimento -> tipo === 'e'){
+            $produto -> increment('estoque', $movimento -> quantidade);
+        }else{
+            $produto -> decrement ('estoque', $movimento -> quantidade);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# criar projeto (abrir cmd na pasta onde deseja que o projeto seja criado)
+    - laravel new nome_projeto
+        - yes
+        - yes
+        - mysql
+        - no
+        - yes
+        - cd nome_projeto
+        - code .
+
+# editar arquivo .env
+    - APP_NAME="nome para aparecer no site"
+    - pt_BR nos tres LOCALES
+    - APP_TIMEZONE=America/Sao_Paulo
+    - password do DB (alunolab)
+    - executar comando no terminal -> php artisan migrate
+        -yes
+    
+# acessar site do filament
+    - executar os 2 comandos require e --panels
+        - nome do painel
+    - executar comando para criar usuário
+        -nome
+        -email
+        -senha: senha123 (a senha não aparece na digitação)
+
+# criar models
+    - mudar o site filament para a versão 3.x na aba getting start
+    - executar comando para criar modelos
+    - ir nos modelos na pasta App - Models e modifcar o modelo
+    - ir nas migrations na pasta Database - Migrations e adicionar os campos criados no modelo
+    - executar php artisan migrate
+    - abrir novo terminal e executar o projeto (composer run dev)
+    - testar o projeto, fazer o login seu usuario
+
+# criar o recursos
+    - site filament para versão 4.x na aba resources
+    - criar os recursos com o comando do site
+    - ir no recursos em App - Filament - Resources - Movimentos - Pages - CreateMovimento.php
+    - criar as funções beforeCreate e afterCreate (tem no site filamento em create records) 
+    - lembrar de fazer as importações de Produto e de Notification
+    - para notification tem no site do filament copiar de lá retirar o actions e mudar as messagens
+
+# função beforeCreate
+    $data = $this->data; // Pega os dados preenchidos pelo usuário
+    $produto = Produto::find($data['produto_id']); // Busca pelo ID
+    $quantidadeMovimento = (int)$data['quantidade']; // Pegar a quantidade digitada
+
+    if ($data['tipo'] === 's' && $produto->estoque < $quantidadeMovimento){
+        //notification
+    }
+
+# função afterCreate
+    $movimento = $this->getRecord(); // Pega os dados do movimento
+    $produto = $movimento->produto; // Pega o produto do movimento
+    if ($movimento->tipo === 'e'){
+        $produto->increment('estoque', $movimento->quantidade);
+    }else{
+        $produto->decrement('estoque', $movimento->quantidade);
+    }
+
