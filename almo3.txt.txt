@@ -243,7 +243,7 @@ class CreateMovimento extends CreateRecord
 
 # criar o recursos
     - site filament para versão 4.x na aba resources
-    - criar os recursos com o comando do site
+    - criar os recursos com o comando do site  php artisan make:filament-resource Customer
     - ir no recursos em App - Filament - Resources - Movimentos - Pages - CreateMovimento.php
     - criar as funções beforeCreate e afterCreate (tem no site filamento em create records) 
     - lembrar de fazer as importações de Produto e de Notification
@@ -266,4 +266,5 @@ class CreateMovimento extends CreateRecord
     }else{
         $produto->decrement('estoque', $movimento->quantidade);
     }
+
 
